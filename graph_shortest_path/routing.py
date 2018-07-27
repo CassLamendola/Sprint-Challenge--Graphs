@@ -1,6 +1,7 @@
 #/usr/bin/env python
 
 import sys
+import heapq
 
 
 # Edge class
@@ -12,9 +13,13 @@ class Edge:
 
 # Vertex class
 class Vertex:
-    def __init__(self, value='vertex', color='white', parent=None):
+    def __init__(self, x_pos=1, y_pos=1, value='vertex', 
+                 color='white', parent=None):
         self.value = value
+        self.x_pos = x_pos
+        self.y_pos = y_pos
         self.edges = []
+        self.cost = 0
         # Color of this vertex
         # Used to mark vertices for the traversal algorithm (BFS or DFS)
         self.color = color
@@ -63,7 +68,36 @@ class Graph:
                 vertex = edge.destination
                 if vertex not in explored:
                     queue.append(vertex)
-                    vertex.parent = current_vertex  
+                    vertex.parent = current_vertex
+
+    def _calc_distance(self, start, end):
+        x1, y1 = start.x_pos, start.y_pos
+        x2, y2 = end.x_pos, end.y_pos
+        return ((y1-y2)**2 + (x2-x1)**2)**(1/2)
+
+    def a_star(self, start, end):
+        """
+        Find the shortest path between two vertices (shortest in 
+        terms of euclidean distance)
+
+        @param {Vertex} start: The starting Vertex
+        @param {Vertex} end: The ending Vertex
+        """
+        heap = []
+        explored = set()
+        heapq.heappush(heap, (self._calc_distance(start, end), start))
+        while heap:
+            current_vertex = heapq.heappop(heap)
+            explored.add(current_vertex)
+            if current_vertex == end:
+                return self.output_route(current_vertex)
+            for edge in current_vertex.edges:
+                next_vertex = edge.destination
+                weight = (self._calc_distance(current_vertex, next_vertex) +
+                                self._calc_distance(next_vertex, end) +
+                                current_vertex.cost)
+                
+                  
 
     def output_route(self, start):
         """
@@ -73,9 +107,12 @@ class Graph:
         @param {Vertex} start: The starting Vertex to follow and print
         """
         current_vertex = start
+        path = []
         while current_vertex != None:
             print(current_vertex.value)
+            path.append(current_vertex.value)
             current_vertex = current_vertex.parent
+        return path
 
     def route(self, start, end):
         # BFS to build the parent reference tree
